@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Scale Navigator | The Lewis Framework</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      background: #000;
+      color: #e0e0e0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Starfield background */
+    .starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(ellipse at center, #0a0a20 0%, #000 100%);
+    }
+    
+    .star {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle var(--twinkle-duration) ease-in-out infinite;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--star-opacity); }
+      50% { opacity: calc(var(--star-opacity) * 0.3); }
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 30px 0;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      background: linear-gradient(90deg, #FFD700, #64ffc8, #4FC3F7, #ff6b9d, #FFD700);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 5s linear infinite;
+      margin-bottom: 10px;
+    }
+    
+    @keyframes gradient-shift {
+      from { background-position: 0% center; }
+      to { background-position: 200% center; }
+    }
+    
+    .header .subtitle {
+      font-size: 1.2rem;
+      color: #8892b0;
+      font-style: italic;
+    }
+    
+    .header .equation {
+      font-family: 'Courier New', monospace;
+      font-size: 2rem;
+      color: #FFD700;
+      margin-top: 20px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+    
+    /* Scale Navigator */
+    .scale-navigator {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    
+    .scale-btn {
+      padding: 12px 20px;
+      border-radius: 25px;
+      border: 2px solid;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .scale-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .scale-btn:hover::before {
+      left: 100%;
+    }
+    
+    .scale-btn.galactic { border-color: #9966ff; color: #9966ff; }
+    .scale-btn.solar { border-color: #FFD700; color: #FFD700; }
+    .scale-btn.planetary { border-color: #4FC3F7; color: #4FC3F7; }
+    .scale-btn.biological { border-color: #ff6b9d; color: #ff6b9d; }
+    .scale-btn.cellular { border-color: #64ffc8; color: #64ffc8; }
+    .scale-btn.quantum { border-color: #ff8a80; color: #ff8a80; }
+    
+    .scale-btn.active {
+      transform: scale(1.1);
+      box-shadow: 0 0 30px currentColor;
+    }
+    
+    .scale-btn.galactic.active { background: rgba(153, 102, 255, 0.3); }
+    .scale-btn.solar.active { background: rgba(255, 215, 0, 0.3); }
+    .scale-btn.planetary.active { background: rgba(79, 195, 247, 0.3); }
+    .scale-btn.biological.active { background: rgba(255, 107, 157, 0.3); }
+    .scale-btn.cellular.active { background: rgba(100, 255, 200, 0.3); }
+    .scale-btn.quantum.active { background: rgba(255, 138, 128, 0.3); }
+    
+    /* Main visualization area */
+    .main-display {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1000px) {
+      .main-display {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .visualization-panel {
+      background: rgba(10, 10, 30, 0.8);
+      border-radius: 20px;
+      border: 2px solid var(--scale-color);
+      padding: 30px;
+      min-height: 500px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.5s;
+    }
+    
+    .scale-title {
+      text-align: center;
+      font-size: 1.8rem;
+      color: var(--scale-color);
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px var(--scale-color);
+      transition: all 0.5s;
+    }
+    
+    .scale-size {
+      text-align: center;
+      font-size: 1rem;
+      color: #8892b0;
+      margin-bottom: 25px;
+    }
+    
+    /* Visualization container */
+    .vis-container {
+      width: 100%;
+      height: 350px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* Scale-specific visualizations */
+    .scale-vis {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+    }
+    
+    .scale-vis.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* Galaxy */
+    .galaxy {
+      width: 280px;
+      height: 280px;
+      position: relative;
+      animation: galaxy-rotate 30s linear infinite;
+    }
+    
+    @keyframes galaxy-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .galaxy-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #fff 0%, #FFD700 30%, #9966ff 70%, transparent 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 60px #9966ff, 0 0 100px #FFD700;
+    }
+    
+    .galaxy-arm {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 250px;
+      height: 4px;
+      background: linear-gradient(90deg, transparent 0%, #9966ff 30%, #4FC3F7 60%, transparent 100%);
+      border-radius: 50%;
+      transform-origin: left center;
+      box-shadow: 0 0 20px #9966ff;
+    }
+    
+    .galaxy-arm:nth-child(2) { transform: rotate(0deg) translateX(-125px); }
+    .galaxy-arm:nth-child(3) { transform: rotate(90deg) translateX(-125px); }
+    .galaxy-arm:nth-child(4) { transform: rotate(180deg) translateX(-125px); }
+    .galaxy-arm:nth-child(5) { transform: rotate(270deg) translateX(-125px); }
+    
+    .galaxy-stars {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .galaxy-star {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 5px #fff;
+    }
+    
+    /* Solar System */
+    .solar-system {
+      width: 300px;
+      height: 300px;
+      position: relative;
+    }
+    
+    .sun {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle, #fff 0%, #FFD700 50%, #ff8800 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 50px #FFD700, 0 0 100px #ff8800;
+      animation: sun-pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes sun-pulse {
+      0%, 100% { box-shadow: 0 0 50px #FFD700, 0 0 100px #ff8800; }
+      50% { box-shadow: 0 0 70px #FFD700, 0 0 120px #ff8800; }
+    }
+    
+    .orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 50%;
+    }
+    
+    .planet {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      border-radius: 50%;
+      animation: orbit-rotate var(--orbit-duration) linear infinite;
+    }
+    
+    .planet.mercury {
+      margin-left: -4px;
+      margin-top: -54px;
+      transform-origin: 4px 54px;
+    }
+    
+    .planet.earth {
+      margin-left: -6px;
+      margin-top: -76px;
+      transform-origin: 6px 76px;
+    }
+    
+    .planet.mars {
+      margin-left: -5px;
+      margin-top: -100px;
+      transform-origin: 5px 100px;
+    }
+    
+    .planet.jupiter {
+      margin-left: -11px;
+      margin-top: -141px;
+      transform-origin: 11px 141px;
+    }
+    
+    @keyframes orbit-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Earth */
+    .earth-vis {
+      width: 200px;
+      height: 200px;
+      position: relative;
+    }
+    
+    .earth-globe {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #1a5f2a 0%, #2d8f4e 20%, #1e6b8a 40%, #1a4a6e 60%, #1a5f2a 80%);
+      border-radius: 50%;
+      box-shadow: 0 0 50px rgba(79, 195, 247, 0.5), inset -30px -30px 60px rgba(0,0,0,0.5);
+      animation: earth-rotate 20s linear infinite;
+    }
+    
+    @keyframes earth-rotate {
+      from { background-position: 0% 50%; }
+      to { background-position: 200% 50%; }
+    }
+    
+    .schumann-wave {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(79, 195, 247, 0.5);
+      border-radius: 50%;
+      animation: schumann-pulse 1.28s ease-in-out infinite; /* 7.83 Hz period approximation for visual */
+    }
+    
+    .schumann-wave:nth-child(2) { width: 230px; height: 230px; animation-delay: 0.3s; }
+    .schumann-wave:nth-child(3) { width: 260px; height: 260px; animation-delay: 0.6s; }
+    .schumann-wave:nth-child(4) { width: 290px; height: 290px; animation-delay: 0.9s; }
+    
+    @keyframes schumann-pulse {
+      0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
+    }
+    
+    /* Heart */
+    .heart-vis {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+    
+    .heart-shape {
+      width: 150px;
+      height: 150px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: heartbeat-vis 1s ease-in-out infinite;
+    }
+    
+    .heart-shape svg {
+      width: 100%;
+      height: 100%;
+      fill: #ff6b9d;
+      filter: drop-shadow(0 0 20px rgba(255, 107, 157, 0.6));
+    }
+    
+    @keyframes heartbeat-vis {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      15% { transform: translate(-50%, -50%) scale(1.15); }
+      30% { transform: translate(-50%, -50%) scale(1); }
+      45% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    
+    .heart-field {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(255, 107, 157, 0.4);
+      border-radius: 50%;
+      animation: heart-field-pulse 1s ease-in-out infinite;
+    }
+    
+    .heart-field:nth-child(1) { width: 180px; height: 180px; }
+    .heart-field:nth-child(2) { width: 220px; height: 220px; animation-delay: 0.2s; }
+    .heart-field:nth-child(3) { width: 260px; height: 260px; animation-delay: 0.4s; }
+    
+    @keyframes heart-field-pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; box-shadow: 0 0 20px rgba(255, 107, 157, 0.5); }
+    }
+    
+    /* Cell */
+    .cell-vis {
+      width: 200px;
+      height: 200px;
+      position: relative;
+    }
+    
+    .cell-membrane {
+      width: 100%;
+      height: 100%;
+      border: 4px solid rgba(100, 255, 200, 0.6);
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(100, 255, 200, 0.4), inset 0 0 30px rgba(100, 255, 200, 0.2);
+      animation: cell-pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes cell-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .cell-nucleus {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #aa88ff 0%, #664499 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(170, 136, 255, 0.5);
+    }
+    
+    .cell-mito {
+      position: absolute;
+      width: 25px;
+      height: 12px;
+      background: linear-gradient(90deg, #88aa66, #aacc88, #88aa66);
+      border-radius: 50%;
+      animation: mito-move 4s ease-in-out infinite;
+    }
+    
+    .cell-mito:nth-child(3) { top: 25%; left: 20%; animation-delay: 0s; }
+    .cell-mito:nth-child(4) { top: 65%; left: 25%; animation-delay: 1s; }
+    .cell-mito:nth-child(5) { top: 30%; right: 20%; animation-delay: 2s; }
+    .cell-mito:nth-child(6) { top: 60%; right: 25%; animation-delay: 3s; }
+    
+    @keyframes mito-move {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(10px, -5px) rotate(15deg); }
+      50% { transform: translate(15px, 5px) rotate(-10deg); }
+      75% { transform: translate(5px, 10px) rotate(5deg); }
+    }
+    
+    /* Quantum */
+    .quantum-vis {
+      width: 250px;
+      height: 250px;
+      position: relative;
+    }
+    
+    .electron-cloud {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      border: 2px dashed rgba(255, 138, 128, 0.3);
+      border-radius: 50%;
+      animation: cloud-pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes cloud-pulse {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+    }
+    
+    .electron-orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: var(--orbit-size);
+      height: var(--orbit-size);
+      border: 2px solid rgba(255, 138, 128, 0.3);
+      border-radius: 50%;
+    }
+    
+    .nucleus-quantum {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 30px;
+      background: radial-gradient(circle, #fff 0%, #ff8a80 50%, #ff5252 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 30px #ff8a80;
+      z-index: 10;
+    }
+    
+    .electron {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      margin-top: calc(var(--e-orbit-radius) * -1);
+      margin-left: -7px;
+      background: #4FC3F7;
+      border-radius: 50%;
+      box-shadow: 0 0 15px #4FC3F7, 0 0 30px #4FC3F7;
+      transform-origin: 7px var(--e-orbit-radius);
+      animation: electron-spin var(--e-orbit-duration) linear infinite;
+    }
+    
+    @keyframes electron-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .photon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      background: #FFD700;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700;
+      animation: photon-emit 2s ease-out infinite;
+      opacity: 0;
+    }
+    
+    @keyframes photon-emit {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(80px, -60px) scale(0.5); opacity: 0; }
+    }
+    
+    /* Info Panel */
+    .info-panel {
+      background: rgba(10, 10, 30, 0.9);
+      border-radius: 15px;
+      border: 2px solid var(--scale-color);
+      padding: 25px;
+      transition: border-color 0.5s;
+    }
+    
+    .info-title {
+      font-size: 1.3rem;
+      color: var(--scale-color);
+      margin-bottom: 20px;
+      text-align: center;
+      transition: color 0.5s;
+    }
+    
+    /* E = hf display */
+    .ehf-display {
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .ehf-equation {
+      font-family: 'Courier New', monospace;
+      font-size: 1.8rem;
+      color: #FFD700;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+    
+    .ehf-values {
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    
+    .ehf-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .ehf-label { color: #8892b0; }
+    .ehf-value { 
+      font-family: 'Courier New', monospace; 
+      color: var(--scale-color);
+      transition: color 0.5s;
+    }
+    
+    /* Scale comparison */
+    .scale-comparison {
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .comparison-title {
+      color: #FFD700;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .scale-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #9966ff, #FFD700, #4FC3F7, #ff6b9d, #64ffc8, #ff8a80);
+      border-radius: 10px;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    
+    .scale-marker {
+      position: absolute;
+      top: -8px;
+      width: 4px;
+      height: 36px;
+      background: #fff;
+      border-radius: 2px;
+      box-shadow: 0 0 10px #fff;
+      transition: left 0.5s;
+    }
+    
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #666;
+    }
+    
+    /* Principle box */
+    .principle-box {
+      background: rgba(var(--scale-rgb), 0.1);
+      border: 1px solid var(--scale-color);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      transition: all 0.5s;
+    }
+    
+    .principle-title {
+      color: var(--scale-color);
+      font-size: 1rem;
+      margin-bottom: 10px;
+      transition: color 0.5s;
+    }
+    
+    .principle-text {
+      color: #c0c0c0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    
+    /* Connection insight */
+    .connection-box {
+      background: rgba(255, 215, 0, 0.05);
+      border: 1px dashed rgba(255, 215, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+    }
+    
+    .connection-title {
+      color: #FFD700;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+    
+    .connection-text {
+      color: #8892b0;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 30px;
+      margin-top: 30px;
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .footer .highlight {
+      color: #FFD700;
+    }
+  </style>
+</head>
+<body>
+  <div class="starfield" id="starfield"></div>
+  
+  <div class="container">
+    <header class="header">
+      <h1>UNIFIED SCALE NAVIGATOR</h1>
+      <p class="subtitle">Journey Through the Scales — One Equation Governs All</p>
+      <p class="equation">E = hf</p>
+    </header>
+    
+    <nav class="scale-navigator">
+      <button class="scale-btn galactic" onclick="setScale('galactic', event)">🌌 Galactic</button>
+      <button class="scale-btn solar" onclick="setScale('solar', event)">☀️ Solar System</button>
+      <button class="scale-btn planetary active" onclick="setScale('planetary', event)">🌍 Planetary</button>
+      <button class="scale-btn biological" onclick="setScale('biological', event)">❤️ Biological</button>
+      <button class="scale-btn cellular" onclick="setScale('cellular', event)">🔬 Cellular</button>
+      <button class="scale-btn quantum" onclick="setScale('quantum', event)">⚛️ Quantum</button>
+    </nav>
+    
+    <div class="main-display">
+      <div class="visualization-panel">
+        <h2 class="scale-title" id="scaleTitle">🌍 Planetary Scale</h2>
+        <p class="scale-size" id="scaleSize">~10⁷ meters (Earth diameter: 12,742 km)</p>
+        
+        <div class="vis-container">
+          <!-- Galactic -->
+          <div class="scale-vis" id="vis-galactic">
+            <div class="galaxy">
+              <div class="galaxy-core"></div>
+              <div class="galaxy-arm"></div>
+              <div class="galaxy-arm"></div>
+              <div class="galaxy-arm"></div>
+              <div class="galaxy-arm"></div>
+              <div class="galaxy-stars" id="galaxyStars"></div>
+            </div>
+          </div>
+          
+          <!-- Solar System -->
+          <div class="scale-vis" id="vis-solar">
+            <div class="solar-system">
+              <div class="sun"></div>
+              <div class="orbit" style="width: 100px; height: 100px;"></div>
+              <div class="orbit" style="width: 140px; height: 140px;"></div>
+              <div class="orbit" style="width: 190px; height: 190px;"></div>
+              <div class="orbit" style="width: 260px; height: 260px;"></div>
+              <div class="planet mercury" style="width: 8px; height: 8px; background: #aaa; --orbit-radius: 50px; --orbit-duration: 3s;"></div>
+              <div class="planet earth" style="width: 12px; height: 12px; background: #4FC3F7; --orbit-radius: 70px; --orbit-duration: 5s; animation-delay: -2s;"></div>
+              <div class="planet mars" style="width: 10px; height: 10px; background: #ff6b4a; --orbit-radius: 95px; --orbit-duration: 7s; animation-delay: -4s;"></div>
+              <div class="planet jupiter" style="width: 22px; height: 22px; background: linear-gradient(135deg, #d4a574, #c4956a); --orbit-radius: 130px; --orbit-duration: 12s; animation-delay: -7s;"></div>
+            </div>
+          </div>
+          
+          <!-- Planetary -->
+          <div class="scale-vis active" id="vis-planetary">
+            <div class="earth-vis">
+              <div class="schumann-wave"></div>
+              <div class="schumann-wave"></div>
+              <div class="schumann-wave"></div>
+              <div class="schumann-wave"></div>
+              <div class="earth-globe"></div>
+            </div>
+          </div>
+          
+          <!-- Biological -->
+          <div class="scale-vis" id="vis-biological">
+            <div class="heart-vis">
+              <div class="heart-field"></div>
+              <div class="heart-field"></div>
+              <div class="heart-field"></div>
+              <div class="heart-shape">
+                <svg viewBox="0 0 100 100">
+                  <path d="M50,88 C50,88 10,55 10,35 C10,20 22,10 35,10 C43,10 50,15 50,25 C50,15 57,10 65,10 C78,10 90,20 90,35 C90,55 50,88 50,88 Z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Cellular -->
+          <div class="scale-vis" id="vis-cellular">
+            <div class="cell-vis">
+              <div class="cell-membrane"></div>
+              <div class="cell-nucleus"></div>
+              <div class="cell-mito"></div>
+              <div class="cell-mito"></div>
+              <div class="cell-mito"></div>
+              <div class="cell-mito"></div>
+            </div>
+          </div>
+          
+          <!-- Quantum -->
+          <div class="scale-vis" id="vis-quantum">
+            <div class="quantum-vis">
+              <div class="electron-cloud"></div>
+              <div class="electron-orbit" style="--orbit-size: 120px;"></div>
+              <div class="electron-orbit" style="--orbit-size: 170px; transform: translate(-50%, -50%) rotate(60deg);"></div>
+              <div class="electron-orbit" style="--orbit-size: 220px; transform: translate(-50%, -50%) rotate(120deg);"></div>
+              <div class="nucleus-quantum"></div>
+              <div class="electron" style="--e-orbit-radius: 60px; --e-orbit-duration: 1s;"></div>
+              <div class="electron" style="--e-orbit-radius: 85px; --e-orbit-duration: 1.5s; animation-delay: 0.3s;"></div>
+              <div class="electron" style="--e-orbit-radius: 110px; --e-orbit-duration: 2s; animation-delay: 0.7s;"></div>
+              <div class="photon"></div>
+              <div class="photon" style="animation-delay: 0.7s;"></div>
+              <div class="photon" style="animation-delay: 1.4s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="info-panel">
+        <h3 class="info-title" id="infoTitle">🌍 Planetary Scale</h3>
+        
+        <div class="ehf-display">
+          <p class="ehf-equation">E = hf</p>
+          <div class="ehf-values">
+            <div class="ehf-row">
+              <span class="ehf-label">Frequency (f)</span>
+              <span class="ehf-value" id="freqValue">7.83 Hz</span>
+            </div>
+            <div class="ehf-row">
+              <span class="ehf-label">h (Planck)</span>
+              <span class="ehf-value">6.626 × 10⁻³⁴ J·s</span>
+            </div>
+            <div class="ehf-row">
+              <span class="ehf-label">Energy (E)</span>
+              <span class="ehf-value" id="energyValue">5.19 × 10⁻³³ J</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="scale-comparison">
+          <h4 class="comparison-title">📏 Scale Position</h4>
+          <div class="scale-bar">
+            <div class="scale-marker" id="scaleMarker" style="left: 40%;"></div>
+          </div>
+          <div class="scale-labels">
+            <span>10²¹ m</span>
+            <span>10⁰ m</span>
+            <span>10⁻¹⁵ m</span>
+          </div>
+        </div>
+        
+        <div class="principle-box">
+          <h4 class="principle-title" id="principleTitle">🔬 The Principle at This Scale</h4>
+          <p class="principle-text" id="principleText">
+            Earth's Schumann Resonance (7.83 Hz) creates an electromagnetic "heartbeat" in the cavity between the surface and ionosphere. Human brainwaves evolved to synchronize with this frequency.
+          </p>
+        </div>
+        
+        <div class="connection-box">
+          <h4 class="connection-title">🔗 The Golden Thread</h4>
+          <p class="connection-text" id="connectionText">
+            "The same E = hf governs electrons AND planets. Frequency IS energy, across ALL scales."
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="footer">
+      <p><strong class="highlight">THE UNIFIED LEWIS FRAMEWORK</strong></p>
+      <p style="margin-top: 10px;">E = hf — The Golden Thread Across All Scales</p>
+      <p style="margin-top: 10px;">Created by the Lewis Family | 2026</p>
+      <p style="margin-top: 5px;">💜 "If you want to find the secrets of the universe, think in terms of energy, frequency and vibration." — Tesla</p>
+    </footer>
+  </div>
+  
+  <script>
+    // Generate starfield
+    function createStarfield() {
+      const container = document.getElementById('starfield');
+      for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        const size = Math.random() * 2 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.setProperty('--twinkle-duration', (Math.random() * 3 + 2) + 's');
+        star.style.setProperty('--star-opacity', Math.random() * 0.5 + 0.3);
+        container.appendChild(star);
+      }
+    }
+    
+    // Generate galaxy stars
+    function createGalaxyStars() {
+      const container = document.getElementById('galaxyStars');
+      for (let i = 0; i < 50; i++) {
+        const star = document.createElement('div');
+        star.className = 'galaxy-star';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 30 + Math.random() * 100;
+        star.style.left = (140 + Math.cos(angle) * dist) + 'px';
+        star.style.top = (140 + Math.sin(angle) * dist) + 'px';
+        container.appendChild(star);
+      }
+    }
+    
+    createStarfield();
+    createGalaxyStars();
+    
+    // Scale data
+    const scales = {
+      galactic: {
+        title: '🌌 Galactic Scale',
+        size: '~10²¹ meters (Milky Way: 100,000 light years)',
+        color: '#9966ff',
+        rgb: '153, 102, 255',
+        markerPos: '0%',
+        freq: '~10⁻¹⁴ Hz (rotation)',
+        energy: '~10⁻⁴⁸ J per quantum',
+        principle: 'Galaxies are massive rotating electromagnetic systems. Spiral arms are density waves — frequency patterns in matter. The same toroidal geometry seen in atoms appears at galactic scale.',
+        connection: 'From galaxies to electrons: Spinning systems create frequency, frequency determines energy, energy shapes structure.'
+      },
+      solar: {
+        title: '☀️ Solar System Scale',
+        size: '~10¹² meters (Solar System diameter)',
+        color: '#FFD700',
+        rgb: '255, 215, 0',
+        markerPos: '20%',
+        freq: '~10⁻⁸ Hz (Earth orbit)',
+        energy: '~10⁻⁴² J per quantum',
+        principle: 'The Lewis Formation Theory: Electromagnetic density stratification determines planetary positions. Dense materials orbit close, light materials far. 100% accuracy in simulation.',
+        connection: 'The solar system is frequency-organized. Each planet resonates at its orbital frequency — a cosmic symphony.'
+      },
+      planetary: {
+        title: '🌍 Planetary Scale',
+        size: '~10⁷ meters (Earth diameter: 12,742 km)',
+        color: '#4FC3F7',
+        rgb: '79, 195, 247',
+        markerPos: '40%',
+        freq: '7.83 Hz (Schumann)',
+        energy: '5.19 × 10⁻³³ J',
+        principle: 'Earth\'s Schumann Resonance (7.83 Hz) creates an electromagnetic "heartbeat" in the cavity between the surface and ionosphere. Human brainwaves evolved to synchronize with this frequency.',
+        connection: 'We evolved IN Earth\'s frequency field. When our brains match 7.83 Hz, we achieve coherence with our planet.'
+      },
+      biological: {
+        title: '❤️ Biological Scale',
+        size: '~10⁰ meters (Human body)',
+        color: '#ff6b9d',
+        rgb: '255, 107, 157',
+        markerPos: '60%',
+        freq: '0.1 Hz (HRV coherence)',
+        energy: '6.63 × 10⁻³⁵ J',
+        principle: 'The heart generates the body\'s strongest electromagnetic field — 100x stronger than the brain electrically, 5000x magnetically. Coherent HRV at 0.1 Hz correlates with optimal health.',
+        connection: 'The heart\'s toroidal field has the same geometry as galaxies. Coherence = organized frequency = health.'
+      },
+      cellular: {
+        title: '🔬 Cellular Scale',
+        size: '~10⁻⁵ meters (Human cell: 10-100 μm)',
+        color: '#64ffc8',
+        rgb: '100, 255, 200',
+        markerPos: '80%',
+        freq: '~10³ Hz (membrane)',
+        energy: '~10⁻³¹ J',
+        principle: 'Cells are electromagnetic oscillators (Lakhovsky). Healthy cells maintain -70 to -100 mV. Cancer cells drop to -15 to -20 mV. Higher voltage = higher frequency = better function.',
+        connection: 'E = hf at the cellular level: Higher frequency = higher energy = healthier cell. Restore frequency, restore health.'
+      },
+      quantum: {
+        title: '⚛️ Quantum Scale',
+        size: '~10⁻¹⁰ meters (Atom) to 10⁻¹⁵ m (Nucleus)',
+        color: '#ff8a80',
+        rgb: '255, 138, 128',
+        markerPos: '100%',
+        freq: '~10¹⁵ Hz (visible light)',
+        energy: '~10⁻¹⁹ J (photon)',
+        principle: 'This is where E = hf was discovered (Planck, 1900). Electrons exist in frequency states. Photon emission/absorption is frequency change. All chemistry is frequency transactions.',
+        connection: 'E = hf is PROVEN here. Nobel Prizes confirm it. This is the foundation — and the same principle scales up to galaxies.'
+      }
+    };
+    
+    let currentScale = 'planetary';
+    
+    function setScale(scale, e) {
+      currentScale = scale;
+      const data = scales[scale];
+      
+      // Update buttons
+      document.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active'));
+      if (e) e.target.classList.add('active');
+      
+      // Update CSS variables
+      const root = document.documentElement.style;
+      root.setProperty('--scale-color', data.color);
+      root.setProperty('--scale-rgb', data.rgb);
+      
+      // Update visualization
+      document.querySelectorAll('.scale-vis').forEach(vis => vis.classList.remove('active'));
+      document.getElementById(`vis-${scale}`).classList.add('active');
+      
+      // Update text
+      document.getElementById('scaleTitle').textContent = data.title;
+      document.getElementById('scaleSize').textContent = data.size;
+      document.getElementById('infoTitle').textContent = data.title;
+      document.getElementById('freqValue').textContent = data.freq;
+      document.getElementById('energyValue').textContent = data.energy;
+      document.getElementById('scaleMarker').style.left = data.markerPos;
+      document.getElementById('principleTitle').textContent = '🔬 The Principle at This Scale';
+      document.getElementById('principleText').textContent = data.principle;
+      document.getElementById('connectionText').textContent = data.connection;
+    }
+    
+    // Initialize
+    setScale('planetary', null);
+    document.querySelector('.scale-btn.planetary').classList.add('active');
+  </script>
+</body>
+</html>
